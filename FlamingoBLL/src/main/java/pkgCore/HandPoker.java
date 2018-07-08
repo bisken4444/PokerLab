@@ -78,10 +78,13 @@ public class HandPoker extends Hand {
 	private boolean isRoyalFlush() {
 		boolean bIsRoyalFlush = false;
 
-		if ((isFlush()) && (isStraight()) && (isAce()))
-
+		//check for king not ace so a-2-3-4-5 straight flush doesn't get flagged
+		if (isFlush() && isStraight()  
+				&& getCRC().get(1).geteRank() == eRank.KING)
 		{
 			bIsRoyalFlush = true;
+			HandScorePoker HS = getHSP();
+			HS.seteHandStrength(eHandStrength.RoyalFlush);	
 		}
 
 		return bIsRoyalFlush;
@@ -91,7 +94,7 @@ public class HandPoker extends Hand {
 	private boolean isAce() {
 		boolean bIsAce = false;
 
-		if (super.getCards().get(0).geteRank() == eRank.ACE) {
+		if (getCRC().get(0).geteRank() == eRank.ACE) {
 			bIsAce = true;
 		}
 
@@ -101,11 +104,12 @@ public class HandPoker extends Hand {
 	//TODO: Finish this method
 	public boolean isStraightFlush() {
 		boolean bisStraightFlush = false;
-
+		
 		if ((isFlush()) && (isStraight()))
-
 		{
 			bisStraightFlush = true;
+			HandScorePoker HS = getHSP();
+			HS.seteHandStrength(eHandStrength.StraightFlush);	
 		}
 
 		return bisStraightFlush;
@@ -114,6 +118,15 @@ public class HandPoker extends Hand {
 	//TODO: Finish this method
 	public boolean isFourOfAKind() {
 		boolean bisFourOfAKind = false;
+		
+		if (getCRC().get(0).getiCnt() == 4) {
+			bisFourOfAKind = true;
+			HandScorePoker HS = getHSP();
+			HS.seteHandStrength(eHandStrength.FourOfAKind);
+			HS.setHiCard(getCards().get(getCRC().get(0).getiCardPosition()));
+			HS.setKickers(FindTheKickers(getCRC()));
+		}
+		
 		return bisFourOfAKind;
 	}
 
@@ -152,6 +165,9 @@ public class HandPoker extends Hand {
 			switch (iCnt) {
 			case 5:
 				bisFlush = true;
+				HandScorePoker HS = getHSP();
+				HS.seteHandStrength(eHandStrength.Flush);
+				HS.setKickers(FindTheKickers(getCRC()));
 				return bisFlush;
 			case 0:
 				break;
@@ -167,21 +183,56 @@ public class HandPoker extends Hand {
 	//TODO: Finish this method
 	public boolean isStraight() {
 		boolean bisStraight = false;
+		boolean wheel = false;
+		int handSize = super.getCards().size();
 		
-		//	A-2-3-4-5		
-		//	2-3-4-5-6
-		//	3-4-5-6-7
-		//	10-J-Q-K-A
+		//a-2-3-4-5 wheel straight check
+		if (isAce() && (getCRC().get(handSize-1).geteRank() ==  eRank.TWO)) 
+			wheel = true;
 		
-		//	I would use a loop....!  
+		if (getCRC().size() != handSize) 
+			return bisStraight;
 		
+		int orderCheck=0;
+		for (int iCnt=0;iCnt<handSize-1;iCnt++) {
+			if (wheel) {
+				//if ace is first element and a two is last element. don't need to check iCnt 0
+				iCnt++;
+				orderCheck++;
+			}
+			if (getCRC().get(iCnt).geteRank().getiRankNbr() - getCRC().get(iCnt+1).geteRank().getiRankNbr() ==1) {
+				orderCheck++;
+			}
+		}	
+		
+		if (orderCheck == handSize-1) { 
+			bisStraight = true;
+			HandScorePoker HS = getHSP();
+			HS.seteHandStrength(eHandStrength.Straight);
+			HS.setKickers(FindTheKickers(getCRC())); //not sure if its necessary to set, but don't want a null point issue
+			if (wheel) {
+				HS.setHiCard(getCards().get(getCRC().get(1).getiCardPosition()));
+				HS.setLoCard(getCards().get(getCRC().get(0).getiCardPosition()));
+			} else {
+				HS.setHiCard(getCards().get(getCRC().get(0).getiCardPosition()));
+				HS.setLoCard(getCards().get(getCRC().get(4).getiCardPosition()));
+			}
+
+		}
 		return bisStraight;
 	}
 
 	//TODO: Finish this method
 	public boolean isThreeOfAKind() {
 		boolean bisThreeOfAKind = false;
-
+		
+		if (getCRC().get(0).getiCnt() == 3) {
+			bisThreeOfAKind = true;
+			HandScorePoker HS = getHSP();
+			HS.seteHandStrength(eHandStrength.ThreeOfAKind);
+			HS.setHiCard(getCards().get(getCRC().get(0).getiCardPosition()));
+			HS.setKickers(FindTheKickers(getCRC()));
+		}
 
 		return bisThreeOfAKind;
 	}
@@ -190,15 +241,31 @@ public class HandPoker extends Hand {
 	
 	public boolean isTwoPair() {
 		boolean bisTwoPair = false;
-
+		
+		if ((getCRC().get(0).getiCnt() == 2) 
+				&& (getCRC().get(1).getiCnt() == 2)) {
+			bisTwoPair = true;
+			HandScorePoker HS = getHSP();
+			HS.seteHandStrength(eHandStrength.TwoPair);
+			HS.setHiCard(getCards().get(getCRC().get(0).getiCardPosition()));
+			HS.setLoCard(getCards().get(getCRC().get(1).getiCardPosition()));
+			HS.setKickers(FindTheKickers(getCRC()));
+		}
+		
 		return bisTwoPair;
 	}
 
 	//TODO: Finish this method
 	public boolean isPair() {
 		boolean bisPair = false;
-
 		
+		if (getCRC().get(0).getiCnt() == 2) {
+			bisPair = true;
+			HandScorePoker HS = getHSP();
+			HS.seteHandStrength(eHandStrength.Pair);
+			HS.setHiCard(getCards().get(getCRC().get(0).getiCardPosition()));
+			HS.setKickers(FindTheKickers(getCRC()));
+		}
 		return bisPair;
 	}
 
@@ -207,6 +274,13 @@ public class HandPoker extends Hand {
 	public boolean isHighCard() {
 		boolean bisHighCard = false;
 
+		if (getCRC().size() == 5) {
+			bisHighCard = true;
+			HandScorePoker HS = getHSP();
+			HS.seteHandStrength(eHandStrength.HighCard);
+			HS.setHiCard(getCards().get(getCRC().get(0).getiCardPosition()));
+			HS.setKickers(FindTheKickers(getCRC()));
+		}
 		return bisHighCard;
 	}
 
